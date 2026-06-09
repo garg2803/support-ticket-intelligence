@@ -1,0 +1,398 @@
+{
+  "name": "Support Ticket Analysis - Amit Garg",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        -592
+      ],
+      "id": "a25bfc97-745c-4f87-a372-17796dce646e",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "fileSelector": "/data/shared/support_ticket_data.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        -464,
+        -320
+      ],
+      "id": "6cec2ad6-327c-40a5-ab07-5c90edb06ba3",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -368,
+        -112
+      ],
+      "id": "454c2228-ae86-473e-a636-86c02684e245",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1badd44a-c6b4-4e9e-a490-8d5c8aaa48a1",
+              "name": "support_ticket_id",
+              "value": "={{ $('Extract from File').item.json['﻿support_ticket_id'] }}",
+              "type": "string"
+            },
+            {
+              "id": "bab6d7c8-0e00-4fcd-801e-72b4d01d370a",
+              "name": "support_ticket_desc",
+              "value": "={{ $('Extract from File').item.json.support_ticket_desc }}",
+              "type": "string"
+            },
+            {
+              "id": "792b9a4e-5f2a-4125-8062-73c662b79d86",
+              "name": "summarisation",
+              "value": "={{ $('Summarize Ticket').item.json.output[0].content[0].text }} ",
+              "type": "string"
+            },
+            {
+              "id": "b821e915-f9cc-4386-a31c-cd173be9fb9f",
+              "name": "response_generation",
+              "value": "= {{ $('Generate Customer Response').item.json.output[0].content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "07796117-8e98-4612-8b48-badf34faeffe",
+              "name": "summary_score",
+              "value": "={{ $('Evaluate Summary').item.json.output[0].content[0].text }}",
+              "type": "string"
+            },
+            {
+              "id": "f915d341-f672-422e-b467-20a89031d38b",
+              "name": "response_score",
+              "value": "={{ $('Evaluate Response').item.json.output[0].content[0].text }}\n",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1008,
+        -192
+      ],
+      "id": "fc599e01-4b10-4706-919b-2e66e0dbfbe2",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "You are a customer support assistant at ShopNest Global. Read the raw customer support ticket and produce a clean summary in maximum 3 sentences. Identify: (1) the core issue, (2) the order or product involved if mentioned, (3) what the customer wants. Output only the summary, nothing else."
+            },
+            {
+              "content": "={{ $json.support_ticket_desc }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        -192,
+        -208
+      ],
+      "id": "1b31035b-1b4d-418e-b666-fd22f9d5ef6f",
+      "name": "Summarize Ticket",
+      "credentials": {
+        "openAiApi": {
+          "id": "JklUB02AKX2A1PiF",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a quality evaluator for AI-generated summaries. Score the summary on these criteria, each out of 5:\n1. Accuracy - does it correctly reflect the ticket issue?\n2. Conciseness - is it brief and free of unnecessary detail?\n3. Clarity - is it easy for a support agent to understand?\nReturn exactly in this format: Accuracy: X/5, Conciseness: X/5, Clarity: X/5, Overall: X/5. Then one sentence of reasoning."
+            },
+            {
+              "content": "={{ $json.output[0].content[0].text }}"
+            },
+            {}
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        80,
+        -208
+      ],
+      "id": "b1bca57b-474f-419d-94e8-f664797ceb1f",
+      "name": "Evaluate Summary",
+      "credentials": {
+        "openAiApi": {
+          "id": "JklUB02AKX2A1PiF",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a professional, empathetic customer support agent at ShopNest Global. Write a response to the customer based on their ticket. Acknowledge the issue warmly, state the relevant resolution, and give a clear next step. Keep it under 150 words.\n\nPolicies you must follow:\n1. Refund & Return Policy\n- Customers are eligible for a full refund or replacement within 10 days of delivery\n- Refund requests raised after 10 days will be reviewed on a case by case basis\n- Refunds are processed within 5 to 7 business days after the return is picked up and verified\n- Digital payments are refunded to the original payment source\n- Cash on delivery orders are refunded via bank transfer within 7 business days\n\n2. Delivery Delay Compensation Policy\n- If an order is delayed beyond the promised delivery date by more than 3 days, the customer is eligible for a ShopNest voucher of Rs 100\n- If the order is delayed beyond 7 days with no resolution, the customer may request a full refund without returning the item\n- Customers must be informed of the revised delivery date proactively once a delay is identified\n\n3. Wrong Item / Damaged Item Policy\n- If a wrong item or damaged item is delivered, the customer is eligible for a free replacement or full refund\n- A pickup of the wrong or damaged item will be arranged within 2 business days of the complaint being raised\n- No return shipping cost is charged to the customer in these cases\n- Photographic evidence may be requested for damaged item claims before replacement or refund is processed\n\n4. Payment Failure Policy\n- If payment is deducted but the order is not confirmed, the amount will be automatically reversed within 3 to 5 business days\n- If the reversal does not reflect after 5 business days, the customer should share the transaction reference number for manual investigation\n- Customers are advised not to retry payment until the previous deduction is reversed to avoid duplicate charges"
+            },
+            {
+              "content": "={{ $('Summarize Ticket').item.json.output[0].content[0].text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.3
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        368,
+        -208
+      ],
+      "id": "e648beed-95e5-4b24-a31d-dcc1fe860f34",
+      "name": "Generate Customer Response",
+      "credentials": {
+        "openAiApi": {
+          "id": "JklUB02AKX2A1PiF",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4",
+          "mode": "list",
+          "cachedResultName": "GPT-4"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "You are a quality evaluator for customer support responses. Score the response on these criteria, each out of 5:\n1. Empathy - does it acknowledge the customer's frustration?\n2. Policy Accuracy - is the resolution aligned with correct policy?\n3. Clarity of Next Steps - does the customer know what happens next?\n4. Professionalism - is the tone appropriate?\nReturn exactly: Empathy: X/5, Policy Accuracy: X/5, Clarity: X/5, Professionalism: X/5, Overall: X/5. One sentence of reasoning."
+            },
+            {
+              "content": "={{ $json.output[0].content[0].text }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 300,
+          "temperature": 0.1
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        -208
+      ],
+      "id": "8034d2a6-afb0-4178-a2e1-0ef33ab6a490",
+      "name": "Evaluate Response",
+      "credentials": {
+        "openAiApi": {
+          "id": "JklUB02AKX2A1PiF",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1184,
+        -176
+      ],
+      "id": "a3f29cfe-555e-4b95-8765-8459aa1d7b76",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "/data/shared/customer_analysis_results.csv",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1.1,
+      "position": [
+        1360,
+        -160
+      ],
+      "id": "9a29f784-f367-46f5-9867-7e6e150de47d",
+      "name": "Read/Write Files from Disk1"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Summarize Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Summarize Ticket": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Summary",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Summary": {
+      "main": [
+        [
+          {
+            "node": "Generate Customer Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Customer Response": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Response": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "versionId": "1994bf9c-af88-4d44-8480-1d80fe4152c8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9eec91ab028da3044b893ad93da376fcd67c0d37224cdead88c7c3ba95ce47dc"
+  },
+  "id": "n6fJF4crNstRN7V6URVL7",
+  "tags": []
+}
